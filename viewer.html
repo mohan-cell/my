@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer (Phone 2)</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: #fff; margin: 0; padding: 20px; }
+        #remote-video { width: 100%; max-width: 500px; border-radius: 10px; background: #000; margin-top: 15px; }
+        input { padding: 10px; width: 60%; max-width: 200px; font-size: 16px; text-align: center; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;}
+    </style>
+</head>
+<body>
+
+    <h2>Live Viewer</h2>
+    <p>Enter the Camera ID from Phone 1:</p>
+    <input type="text" id="cam-id-input" placeholder="e.g. 1a2b3c4d">
+    <button id="connect-btn">View Camera</button>
+    <br>
+    <video id="remote-video" autoplay playsinline></video>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+        const remoteVideo = document.getElementById('remote-video');
+        const connectBtn = document.getElementById('connect-btn');
+        const camIdInput = document.getElementById('cam-id-input');
+
+        // Initialize PeerJS
+        const peer = new Peer();
+
+        connectBtn.addEventListener('click', () => {
+            const targetId = camIdInput.value.trim();
+            if (!targetId) return alert("Please enter an ID");
+
+            connectBtn.innerText = "Connecting...";
+
+            // 1. Send a silent data connection to wake up Phone 1
+            const conn = peer.connect(targetId);
+
+            conn.on('open', () => {
+                console.log("Poked the broadcaster!");
+            });
+        });
+
+        // 2. Wait for Phone 1 to answer with the video stream
+        peer.on('call', (call) => {
+            // Answer the call automatically (no stream sent from viewer)
+            call.answer();
+
+            // When Phone 1's stream arrives, put it in the video element
+            call.on('stream', (remoteStream) => {
+                remoteVideo.srcObject = remoteStream;
+                connectBtn.innerText = "Connected!";
+                connectBtn.style.background = "gray";
+            });
+        });
+    </script>
+</body>
+</html>
