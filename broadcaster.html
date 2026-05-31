@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadcaster (Phone 1)</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: #fff; margin: 0; padding: 20px; }
+        #video { width: 100%; max-width: 500px; border-radius: 10px; background: #000; margin-top: 15px; }
+        .id-box { background: #444; padding: 10px; border-radius: 5px; font-size: 1.2em; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <h2>Camera Broadcaster</h2>
+    <div class="id-box">Your Camera ID: <br><strong id="camera-id" style="color: #4CAF50;">Generating...</strong></div>
+    <video id="video" autoplay playsinline muted></video>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const idDisplay = document.getElementById('camera-id');
+        let localStream;
+
+        // Initialize PeerJS
+        const peer = new Peer();
+
+        // When Peer is ready, display the ID
+        peer.on('open', (id) => {
+            idDisplay.innerText = id;
+        });
+
+        // 1. Get the local camera feed
+        async function startCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+                video.srcObject = localStream;
+            } catch (err) {
+                console.error("Camera error:", err);
+                alert("Could not access camera.");
+            }
+        }
+
+        // 2. Listen for the Viewer connecting to us
+        peer.on('connection', (conn) => {
+            console.log("Viewer connected! Ringing them back with the video stream...");
+            // Call the viewer back and send them our camera stream
+            peer.call(conn.peer, localStream);
+        });
+
+        startCamera();
+    </script>
+</body>
+</html>
